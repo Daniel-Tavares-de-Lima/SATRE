@@ -1,0 +1,11 @@
+{
+  "name": "@satre/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "echo Expo scaffold planned for Task 11"
+  },
+  "dependencies": {
+    "@satre/shared-types": "*"
+  }
+}

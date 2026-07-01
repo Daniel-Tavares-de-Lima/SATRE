@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  name              String
+  termsAcceptedAt   DateTime  @map("terms_accepted_at")
+  privacyAcceptedAt DateTime  @map("privacy_accepted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+  reports           UserReport[]
+  favorites         Favorite[]
+  refreshTokens     RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+model Unit {
+  id                    String   @id @default(uuid())
+  name                  String
+  type                  String
+  address               String
+  lat                   Float
+  lng                   Float
+  phone                 String?
+  active                Boolean  @default(true)
+  accessibilityPhysical Boolean  @default(false) @map("accessibility_physical")
+  accessibilityVisual   Boolean  @default(false) @map("accessibility_visual")
+  accessibilityHearing  Boolean  @default(false) @map("accessibility_hearing")
+  accessibilityNeuro    Boolean  @default(false) @map("accessibility_neuro")
+  createdAt             DateTime @default(now()) @map("created_at")
+  specialties           UnitSpecialty[]
+  snapshots             UnitStatusSnapshot[]
+  reports               UserReport[]
+  favorites             Favorite[]
+
+  @@map("units")
+}
+
+model UnitSpecialty {
+  unitId        String @map("unit_id")
+  specialtyName String @map("specialty_name")
+  unit          Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([unitId, specialtyName])
+  @@map("unit_specialties")
+}
+
+model UnitStatusSnapshot {
+  id                  String   @id @default(uuid())
+  unitId              String   @map("unit_id")
+  unit                Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  occupancyLevel      String   @map("occupancy_level")
+  patientCount        Int      @map("patient_count")
+  doctorCount         Int      @map("doctor_count")
+  officialWaitMinutes Int      @map("official_wait_minutes")
+  source              String   @default("mock")
+  capturedAt          DateTime @default(now()) @map("captured_at")
+
+  @@index([unitId, capturedAt(sort: Desc)])
+  @@map("unit_status_snapshots")
+}
+
+model UserReport {
+  id             String    @id @default(uuid())
+  unitId         String    @map("unit_id")
+  unit           Unit      @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  userId         String?   @map("user_id")
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  deviceHash     String    @map("device_hash")
+  occupancyLevel String    @map("occupancy_level")
+  waitLevel      String    @map("wait_level")
+  note           String?   @db.VarChar(200)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  purgedAt       DateTime? @map("purged_at")
+
+  @@index([unitId, createdAt(sort: Desc)])
+  @@index([deviceHash, unitId, createdAt(sort: Desc)])
+  @@map("user_reports")
+}
+
+model Favorite {
+  userId    String   @map("user_id")
+  unitId    String   @map("unit_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, unitId])
+  @@map("favorites")
+}

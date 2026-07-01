@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: satre
+      POSTGRES_PASSWORD: satre
+      POSTGRES_DB: satre
+    ports:
+      - "5432:5432"
+    volumes:
+      - satre_pg_data:/var/lib/postgresql/data
+
+volumes:
+  satre_pg_data:

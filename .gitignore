@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment (secrets — NEVER commit)
+.env
+.env.local
+.env.*.local
+apps/api/.env
+apps/mobile/.env
+
+# Keep .env.example — safe template for GitHub
+
+# Logs
+*.log
+npm-debug.log*
+
+# Expo / React Native
+.expo/
+apps/mobile/.expo/
+apps/mobile/dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Testing / coverage
+coverage/
+
+# Prisma local databases
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE (optional local settings)
+.idea/
+*.swp
+*.swo
+
+# Docker (local volume data lives outside repo)
+# docker-compose.yml IS committed — only runtime data is excluded above
+
+# Vitest cache
+**/.vite/
+
+# Prisma engine cache
+**/.cache/prisma/
+
+# Local-only — not for GitHub
+docs/
+SATRE/
+documentação/
