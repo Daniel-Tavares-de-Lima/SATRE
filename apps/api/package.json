@@ -8,11 +8,16 @@
     "test:watch": "vitest",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "smoke:units": "tsx src/scripts/list-units.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
     "@prisma/client": "^6.1.0",
-    "@satre/shared-types": "*"
+    "@satre/shared-types": "*",
+    "dotenv": "^16.6.1",
+    "fastify": "^5.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
