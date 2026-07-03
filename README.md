@@ -4,7 +4,7 @@
 
 Aplicativo mobile que oferece informações transparentes sobre unidades de pronto atendimento (UPAs e hospitais) em Recife — lotação, tempo de espera, médicos disponíveis, especialidades e acessibilidade — para ajudar cidadãos a tomar decisões mais informadas e reduzir superlotação.
 
-> Projeto em desenvolvimento · MVP técnico em andamento
+> Projeto em desenvolvimento · API funcional com dados mock · App mobile em scaffold
 
 ---
 
@@ -43,24 +43,35 @@ Alinhado à **ODS 3** — Saúde e bem-estar (Meta 3.8: acesso universal à saú
 
 ---
 
-## Funcionalidades
+## Status do MVP
 
-### Em desenvolvimento (MVP)
+### API (backend)
 
-- [x] Monorepo com tipos compartilhados
-- [x] Banco PostgreSQL + Prisma (schema completo)
-- [x] Seed com 7 unidades de Recife (UPAs + hospitais privados)
-- [x] Algoritmo de estimativa de tempo de espera (com testes)
-- [ ] API REST (auth, unidades, reports, favoritos)
-- [ ] App mobile Expo (mapa, lista, detalhe, report)
-- [ ] Integração com hospital parceiro
+| Módulo | Status |
+|--------|--------|
+| Monorepo + tipos compartilhados | ✅ |
+| PostgreSQL + Prisma + seed (7 unidades) | ✅ |
+| Estimador de tempo de espera (Vitest) | ✅ |
+| MockProvider + UnitsService | ✅ |
+| Auth (register, login, refresh, logout) | ✅ |
+| Rotas de unidades + nearby (raio 15 km) | ✅ |
+| Reports crowdsourcing + anti-spam | ✅ |
+| Favoritos + perfil de usuário | ⏳ Task 8 |
+| Job de retenção de reports (90 dias) | ⏳ Task 9 |
 
-### Planejado (pós-MVP)
+**22 testes automatizados** passando na API (estimador, auth, units, reports, device-hash).
 
-- Integração com sistemas hospitalares (Tasy, MV, etc.)
-- Painel administrativo para unidades
-- Expansão para rede pública (UPAs SUS)
-- Notificações push
+### App mobile (Expo)
+
+| Tela / recurso | Status |
+|----------------|--------|
+| Tabs: Início, Hospitais, Mapa | ✅ |
+| Integração com API (`lib/api.ts`) | ✅ |
+| Componentes: UnitCard, FilterChips, OccupancyBadge | ✅ |
+| Tab Perfil + login/registro | ⏳ |
+| Detalhe da unidade (Emergência) | ⏳ |
+| Modal "Reportar situação" | ⏳ |
+| Configurações | ⏳ |
 
 ---
 
@@ -68,13 +79,13 @@ Alinhado à **ODS 3** — Saúde e bem-estar (Meta 3.8: acesso universal à saú
 
 | Camada | Stack |
 |--------|-------|
-| **Mobile** | Expo · React Native · Expo Router |
+| **Mobile** | Expo SDK 52 · React Native · Expo Router · TanStack Query |
 | **Backend** | Node.js · Fastify · TypeScript |
-| **Banco de dados** | PostgreSQL · Prisma ORM |
+| **Banco de dados** | PostgreSQL 16 · Prisma ORM |
 | **Validação** | Zod |
-| **Auth** | JWT (access + refresh token) |
+| **Auth** | JWT (access 15 min) + refresh token opaco (7 dias) |
 | **Testes (API)** | Vitest |
-| **Mapas** | Google Maps API |
+| **Mapas** | react-native-maps |
 | **Infra local** | Docker Compose |
 
 ---
@@ -84,13 +95,23 @@ Alinhado à **ODS 3** — Saúde e bem-estar (Meta 3.8: acesso universal à saú
 ```
 satre/
 ├── apps/
-│   ├── api/          # API REST (Node.js + Fastify + Prisma)
-│   └── mobile/       # App mobile (Expo) — em scaffold
+│   ├── api/
+│   │   ├── prisma/           # Schema, migrations, seed
+│   │   └── src/
+│   │       ├── routes/       # auth, health, units, reports
+│   │       ├── services/     # auth, units, reports, estimator
+│   │       ├── providers/    # MockProvider (dados mock)
+│   │       ├── plugins/      # Auth (Bearer JWT)
+│   │       └── schemas/      # Validação Zod
+│   └── mobile/
+│       ├── app/              # Expo Router (tabs + rotas)
+│       ├── components/
+│       └── lib/              # api.ts, location.ts
 ├── packages/
-│   └── shared-types/ # Tipos TypeScript compartilhados
+│   └── shared-types/         # Tipos TypeScript compartilhados
 ├── docker-compose.yml
-├── .env.example      # Template de variáveis (seguro para GitHub)
-└── package.json      # Monorepo npm workspaces
+├── .env.example
+└── package.json              # Monorepo npm workspaces
 ```
 
 ---
@@ -99,8 +120,9 @@ satre/
 
 - [Node.js](https://nodejs.org/) 20+
 - [npm](https://www.npmjs.com/) 10+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (para PostgreSQL local)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (PostgreSQL local)
 - Git
+- [Expo Go](https://expo.dev/go) no celular (opcional, para testar o app)
 
 ---
 
@@ -125,15 +147,19 @@ npm install
 # Windows (PowerShell / CMD)
 copy .env.example .env
 copy .env apps\api\.env
+copy apps\mobile\.env.example apps\mobile\.env
 
 # Linux / macOS / Git Bash
 cp .env.example .env
 cp .env apps/api/.env
+cp apps/mobile/.env.example apps/mobile/.env
 ```
 
 Edite o `.env` se necessário. Em dev local, os valores padrão funcionam com o Docker Compose.
 
 > **Importante:** nunca commite o arquivo `.env` — ele contém segredos. Apenas `.env.example` vai para o GitHub.
+
+**Mobile em celular físico:** altere `EXPO_PUBLIC_API_URL` em `apps/mobile/.env` para o IP da sua máquina na rede local (ex.: `http://192.168.0.9:3000`).
 
 ### 4. Subir o banco e popular dados
 
@@ -151,6 +177,28 @@ Isso executa:
 
 ---
 
+## Executar em desenvolvimento
+
+Abra **3 terminais**:
+
+```bash
+# Terminal 1 — banco (se ainda não estiver rodando)
+docker compose up -d
+
+# Terminal 2 — API
+npm run dev:api
+# → http://localhost:3000/health
+# → http://localhost:3000/units
+
+# Terminal 3 — mobile
+npm run dev:mobile
+# Escaneie o QR code com Expo Go ou pressione w para web
+```
+
+**Android emulador:** use `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` em `apps/mobile/.env`.
+
+---
+
 ## Scripts disponíveis
 
 | Comando | Descrição |
@@ -159,51 +207,137 @@ Isso executa:
 | `npm run db:migrate` | Aplica migrations do Prisma |
 | `npm run db:seed` | Popula o banco com unidades mock |
 | `npm run db:setup` | Up + migrate + seed (setup completo) |
-| `npm run dev:api` | Inicia a API em modo dev |
+| `npm run dev:api` | Inicia a API em modo dev (porta 3000) |
 | `npm run dev:mobile` | Inicia o app mobile (Expo) |
-| `npm test` | Roda testes da API (Vitest) |
+| `npm test` | Roda todos os testes da API (Vitest) |
+| `npm run smoke:units -w @satre/api` | Smoke test: lista unidades no terminal |
+
+---
+
+## API — Endpoints
+
+Base URL: `http://localhost:3000`
+
+### Health
+
+```
+GET /health
+```
+
+### Autenticação
+
+```
+POST /auth/register   # { name, email, password, acceptTerms, acceptPrivacy }
+POST /auth/login      # { email, password }
+POST /auth/refresh    # { refreshToken }
+POST /auth/logout     # { refreshToken }
+```
+
+Resposta de register/login: `{ user: { id, name, email }, accessToken, refreshToken }`.
+
+### Unidades
+
+```
+GET /units                              # Filtros: type, maxWait, minDoctors, accessible, specialty, q
+GET /units/nearby?lat=&lng=&radius=     # radius em km (padrão: 15)
+GET /units/:id                          # Detalhe completo
+GET /units/:id/wait-time                # Estimativa + confidence
+```
+
+### Reports (crowdsourcing)
+
+```
+POST /units/:id/reports
+Headers: X-Device-Id (obrigatório), Authorization (opcional)
+Body:   { occupancyLevel, waitLevel, note? }
+```
+
+- `occupancyLevel` / `waitLevel`: `low` | `medium` | `high`
+- `note`: opcional, máx. 200 caracteres (sem e-mail ou CPF)
+- Anti-spam: 1 report por device/usuário por unidade a cada 30 min
+- Rate limit: 10 requisições/min por IP
+
+### Em breve (Tasks 8–9)
+
+```
+POST   /units/:id/favorites
+DELETE /units/:id/favorites
+GET    /users/me/favorites
+GET    /users/me
+PATCH  /users/me
+DELETE /users/me
+```
+
+---
+
+## Exemplos rápidos (curl)
+
+```bash
+# Listar unidades
+curl http://localhost:3000/units
+
+# Unidades perto de Caxangá (UPA Caxangá deve aparecer primeiro)
+curl "http://localhost:3000/units/nearby?lat=-8.0476&lng=-34.9510"
+
+# Registrar usuário
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"Teste\",\"email\":\"teste@satre.app\",\"password\":\"senha1234\",\"acceptTerms\":true,\"acceptPrivacy\":true}"
+
+# Reportar lotação
+curl -X POST http://localhost:3000/units/UNIT_ID/reports \
+  -H "Content-Type: application/json" \
+  -H "X-Device-Id: 11111111-2222-3333-4444-555555555555" \
+  -d "{\"occupancyLevel\":\"medium\",\"waitLevel\":\"high\",\"note\":\"Fila na recepção\"}"
+```
+
+Substitua `UNIT_ID` pelo `id` retornado em `GET /units`.
 
 ---
 
 ## Variáveis de ambiente
 
-| Variável | Descrição |
-|----------|-----------|
-| `DATABASE_URL` | Connection string PostgreSQL |
-| `JWT_SECRET` | Segredo para tokens de acesso |
-| `JWT_REFRESH_SECRET` | Segredo para refresh tokens |
-| `PORT` | Porta da API (padrão: 3000) |
-| `DEVICE_HASH_SALT` | Salt para hash anônimo de device nos reports |
+| Variável | Onde | Descrição |
+|----------|------|-----------|
+| `DATABASE_URL` | `.env` / `apps/api/.env` | Connection string PostgreSQL |
+| `JWT_SECRET` | `.env` / `apps/api/.env` | Segredo JWT (mín. 32 caracteres) |
+| `JWT_REFRESH_SECRET` | `.env` | Reservado para uso futuro |
+| `PORT` | `.env` | Porta da API (padrão: 3000) |
+| `DEVICE_HASH_SALT` | `.env` | Salt para hash anônimo de device nos reports |
+| `EXPO_PUBLIC_API_URL` | `apps/mobile/.env` | URL da API para o app mobile |
 
-Veja `.env.example` para o template completo.
+Veja `.env.example` e `apps/mobile/.env.example` para templates completos.
 
 ---
 
 ## Unidades mock (seed)
 
-| Unidade | Tipo |
-|---------|------|
-| UPA Caxangá | Pública |
-| Pronto Atendimento Caxangá | Pública |
-| UPA Torrões | Pública |
-| UPA Barra de Jangada | Pública |
-| UPA Curado | Pública |
-| Hospital Esperança Recife | Privada |
-| Hospital Restauração | Privada |
+| Unidade | Tipo | Espera (seed) |
+|---------|------|---------------|
+| UPA Caxangá | UPA | 25 min |
+| Pronto Atendimento Caxangá | UPA | 5 min |
+| UPA Torrões | UPA | 13 min |
+| UPA Barra de Jangada | UPA | 22 min |
+| UPA Curado | UPA | 19 min |
+| Hospital Esperança Recife | Privado | 5 min |
+| Hospital Restauração | Privado | 7 min |
 
 ---
 
 ## Privacidade (LGPD)
 
-O MVP coleta apenas **dados pessoais mínimos** (nome e e-mail para autenticação). Dados clínicos sensíveis (CNS, histórico de saúde) **não fazem parte do MVP**.
+O MVP coleta apenas **dados pessoais mínimos** (`name`, `email`, `password_hash`) para autenticação. Dados clínicos sensíveis (CNS, histórico de saúde) **não fazem parte do MVP**.
 
-Reports de lotação são anônimos. Texto livre opcional nos reports exige aviso explícito para não incluir informações médicas.
+- Registro exige aceite de Termos e Política de Privacidade (`terms_accepted_at`, `privacy_accepted_at`).
+- Reports são **anônimos por padrão** (`device_hash`); `user_id` é opcional se logado.
+- Campo `note` nos reports: máx. 200 chars, validação server-side contra e-mail/CPF; copy no app deve avisar *"Não inclua informações médicas ou pessoais."*
+- Retenção de reports: **90 dias** (job previsto na Task 9).
 
 ---
 
 ## Roadmap
 
-1. **Fase atual** — API REST + app mobile com dados mock
+1. **Fase atual** — Completar API (favoritos, perfil, retenção) + telas mobile restantes
 2. **Demo B2B** — pitch para hospital particular em Recife
 3. **Integração real** — conectar ao sistema do hospital parceiro
 4. **Escala** — mais unidades privadas → UPAs públicas

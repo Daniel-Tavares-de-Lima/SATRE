@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
+    "@fastify/rate-limit": "^11.1.0",
     "@prisma/client": "^6.1.0",
     "@satre/shared-types": "*",
     "bcryptjs": "^3.0.3",
