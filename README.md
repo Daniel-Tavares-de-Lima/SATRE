@@ -2,7 +2,7 @@
 
 **Sistema de Informação de Saúde em Tempo Real**
 
-Aplicativo mobile que oferece informações transparentes sobre unidades de pronto atendimento (UPAs e hospitais) em Recife — lotação, tempo de espera, médicos disponíveis, especialidades e acessibilidade — para ajudar cidadãos a tomar decisões mais informadas e reduzir superlotação.
+Aplicativo mobile que oferece informações transparentes sobre unidades de pronto atendimento (UPAs e hospitais) em Recife, que incluem: lotação, tempo de espera, médicos disponíveis, especialidades e acessibilidade para ajudar cidadãos a tomar decisões mais informadas e reduzir superlotação.
 
 > Projeto em desenvolvimento · API funcional com dados mock · App mobile em scaffold
 
