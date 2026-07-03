@@ -1,10 +1,21 @@
 import 'dotenv/config';
 import { buildApp } from './app.js';
 import { env } from './config/env.js';
+import { PURGE_INTERVAL_MS, runPurgeReportsJob } from './jobs/purge-reports.job.js';
 import { prisma } from './lib/prisma.js';
 
 async function main() {
   const app = await buildApp();
+
+  void runPurgeReportsJob().catch((error) => {
+    console.error('[retention] Initial purge failed:', error);
+  });
+
+  const retentionTimer = setInterval(() => {
+    void runPurgeReportsJob().catch((error) => {
+      console.error('[retention] Scheduled purge failed:', error);
+    });
+  }, PURGE_INTERVAL_MS);
 
   try {
     await app.listen({ port: env.PORT, host: '0.0.0.0' });
@@ -16,6 +27,7 @@ async function main() {
   }
 
   const shutdown = async () => {
+    clearInterval(retentionTimer);
     await app.close();
     await prisma.$disconnect();
     process.exit(0);
