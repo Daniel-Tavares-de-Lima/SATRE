@@ -9,6 +9,7 @@ export interface UnitFilters {
   q?: string;
   lat?: number;
   lng?: number;
+  radiusMeters?: number;
 }
 
 export interface HospitalDataProvider {

@@ -103,9 +103,14 @@ async function buildUnitSummary(
   };
 
   if (filters?.lat !== undefined && filters?.lng !== undefined) {
-    summary.distanceMeters = Math.round(
+    const distance = Math.round(
       haversineMeters(filters.lat, filters.lng, unit.lat, unit.lng),
     );
+    summary.distanceMeters = distance;
+
+    if (filters.radiusMeters !== undefined && distance > filters.radiusMeters) {
+      return null;
+    }
   }
 
   return summary;
