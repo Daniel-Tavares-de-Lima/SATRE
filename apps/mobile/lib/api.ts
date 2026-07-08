@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import type { UnitDetail, UnitSummary } from '@satre/shared-types';
+import type { AuthUser, UnitDetail, UnitSummary } from '@satre/shared-types';
+import { useAuthStore, type AuthSession } from './auth-store';
 
 function resolveApiBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -31,15 +32,34 @@ export class ApiError extends Error {
   }
 }
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
-  const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = useAuthStore.getState().accessToken;
+  const headers = new Headers(options.headers);
+
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
   });
 
   if (!response.ok) {
     const text = await response.text();
     throw new ApiError(response.status, text || response.statusText);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -57,6 +77,37 @@ export function fetchUnitById(id: string): Promise<UnitDetail> {
   return apiFetch(`/units/${id}`);
 }
 
-export function fetchHealth(): Promise<{ status: string }> {
+export function fetchHealth(): Promise<{ status: string; timestamp: string }> {
   return apiFetch('/health');
+}
+
+export function login(email: string, password: string): Promise<AuthSession> {
+  return apiFetch<AuthSession>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function register(body: {
+  name: string;
+  email: string;
+  password: string;
+  acceptTerms: boolean;
+  acceptPrivacy: boolean;
+}): Promise<AuthSession> {
+  return apiFetch<AuthSession>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function logout(refreshToken: string): Promise<void> {
+  return apiFetch<void>('/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+export function fetchProfile(): Promise<AuthUser> {
+  return apiFetch('/users/me');
 }

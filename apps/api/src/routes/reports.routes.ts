@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import rateLimit from '@fastify/rate-limit';
 import { optionalAuthenticate } from '../plugins/auth.plugin.js';
 import { ReportError, reportsService } from '../services/reports.service.js';
 import { createReportSchema, formatZodError } from '../schemas/reports.schema.js';
@@ -7,14 +6,17 @@ import { createReportSchema, formatZodError } from '../schemas/reports.schema.js
 const DEVICE_ID_HEADER = 'x-device-id';
 
 export async function reportsRoutes(app: FastifyInstance) {
-  await app.register(rateLimit, {
-    max: 10,
-    timeWindow: '1 minute',
-  });
-
   app.post(
     '/units/:id/reports',
-    { preHandler: [optionalAuthenticate] },
+    {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: '1 minute',
+        },
+      },
+      preHandler: [optionalAuthenticate],
+    },
     async (request, reply) => {
       const { id: unitId } = request.params as { id: string };
       const deviceId = request.headers[DEVICE_ID_HEADER];

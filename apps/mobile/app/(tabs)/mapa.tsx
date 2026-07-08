@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { fetchUnits } from '@/lib/api';
-import { colors, spacing } from '@/constants/theme';
+import { colors, occupancyPinColor, spacing } from '@/constants/theme';
 
 export default function MapaScreen() {
   const { data, isLoading, isError } = useQuery({
@@ -28,8 +28,8 @@ export default function MapaScreen() {
   }
 
   const initialRegion = {
-    latitude: data[0].latitude,
-    longitude: data[0].longitude,
+    latitude: data[0].lat,
+    longitude: data[0].lng,
     latitudeDelta: 0.12,
     longitudeDelta: 0.12,
   };
@@ -44,7 +44,8 @@ export default function MapaScreen() {
         {data.map((unit) => (
           <Marker
             key={unit.id}
-            coordinate={{ latitude: unit.latitude, longitude: unit.longitude }}
+            coordinate={{ latitude: unit.lat, longitude: unit.lng }}
+            pinColor={occupancyPinColor(unit.occupancyLevel)}
             title={unit.name}
             description={`${unit.estimatedWaitMinutes} min · ${unit.occupancyLevel}`}
             onCalloutPress={() => router.push(`/unidade/${unit.id}`)}
