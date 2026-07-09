@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,108 +11,175 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { UnitSummary, UnitType } from '@satre/shared-types';
 import { UnitCard } from '@/components/UnitCard';
+import { UnitFiltersModal } from '@/components/UnitFiltersModal';
 import { API_BASE_URL, fetchUnits } from '@/lib/api';
+import {
+  countActiveFilters,
+  DEFAULT_UNIT_FILTERS,
+  type UnitListFilters,
+} from '@/lib/unit-filters';
 import { colors, spacing } from '@/constants/theme';
-
-type TypeFilter = 'all' | UnitType;
 
 export default function HospitaisScreen() {
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [filters, setFilters] = useState<UnitListFilters>(DEFAULT_UNIT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const activeFilterCount = countActiveFilters(filters);
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ['units', 'all'],
-    queryFn: fetchUnits,
+    queryKey: ['units', 'all', filters, search],
+    queryFn: () => fetchUnits(search, filters),
   });
 
   const units = useMemo(() => {
     if (!data) return [];
-    const q = search.trim().toLowerCase();
-    return data
-      .filter((u) => (typeFilter === 'all' ? true : u.type === typeFilter))
-      .filter(
-        (u) =>
-          !q || u.name.toLowerCase().includes(q) || u.address.toLowerCase().includes(q),
-      )
-      .sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
-  }, [data, search, typeFilter]);
+    return [...data].sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
+  }, [data]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
-      }
-    >
-      <TextInput
-        style={styles.search}
-        placeholder="Pesquisar"
-        value={search}
-        onChangeText={setSearch}
-        placeholderTextColor={colors.textMuted}
-      />
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+        }
+      >
+        <View style={styles.searchRow}>
+          <TextInput
+            style={styles.search}
+            placeholder="Pesquisar unidade"
+            value={search}
+            onChangeText={setSearch}
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel="Pesquisar unidades"
+          />
 
-      <View style={styles.filters}>
-        {(['all', 'upa', 'private'] as TypeFilter[]).map((key) => (
-          <Text
-            key={key}
-            style={[styles.filterBtn, typeFilter === key && styles.filterBtnActive]}
-            onPress={() => setTypeFilter(key)}
+          <Pressable
+            style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]}
+            onPress={() => setFiltersOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir filtros"
           >
-            {key === 'all' ? 'Todas' : key === 'upa' ? 'UPAs' : 'Privadas'}
+            <Text
+              style={[
+                styles.filterButtonText,
+                activeFilterCount > 0 && styles.filterButtonTextActive,
+              ]}
+            >
+              Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </Text>
+          </Pressable>
+        </View>
+
+        {activeFilterCount > 0 ? (
+          <Text style={styles.filterSummary}>
+            {units.length} unidade{units.length === 1 ? '' : 's'} com filtros aplicados
           </Text>
+        ) : null}
+
+        {isLoading && (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        )}
+
+        {isError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>Não foi possível carregar</Text>
+            <Text style={styles.errorText}>API: {API_BASE_URL}</Text>
+            <Pressable style={styles.retryButton} onPress={() => refetch()}>
+              <Text style={styles.retryButtonText}>Tentar novamente</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {!isLoading && !isError && units.length === 0 && (
+          <Text style={styles.empty}>Nenhuma unidade encontrada</Text>
+        )}
+
+        {units.map((unit) => (
+          <UnitCard
+            key={unit.id}
+            unit={unit}
+            onPress={() => router.push(`/unidade/${unit.id}`)}
+          />
         ))}
-      </View>
+      </ScrollView>
 
-      {isLoading && <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />}
-
-      {isError && (
-        <Text style={styles.error}>Erro ao conectar em {API_BASE_URL}</Text>
-      )}
-
-      {units.map((unit: UnitSummary) => (
-        <UnitCard
-          key={unit.id}
-          unit={unit}
-          onPress={() => router.push(`/unidade/${unit.id}`)}
-        />
-      ))}
-    </ScrollView>
+      <UnitFiltersModal
+        visible={filtersOpen}
+        filters={filters}
+        onClose={() => setFiltersOpen(false)}
+        onApply={setFilters}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md },
+  content: { padding: spacing.md, paddingBottom: spacing.xl },
+  searchRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
   search: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
-    marginBottom: spacing.md,
     color: colors.text,
+    fontSize: 16,
   },
-  filters: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  filterBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+  filterButton: {
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    overflow: 'hidden',
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
   },
-  filterBtnActive: {
+  filterButtonActive: {
     backgroundColor: colors.primary,
-    color: '#fff',
     borderColor: colors.primary,
-    fontWeight: '600',
   },
-  loader: { marginVertical: spacing.lg },
-  error: { color: colors.high, marginBottom: spacing.md },
+  filterButtonText: {
+    color: colors.text,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  filterButtonTextActive: {
+    color: '#fff',
+  },
+  filterSummary: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  center: { paddingVertical: spacing.xl, alignItems: 'center' },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorTitle: { fontWeight: '700', color: '#B91C1C', marginBottom: spacing.xs },
+  errorText: { color: '#7F1D1D', fontSize: 13, marginBottom: spacing.sm },
+  retryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  retryButtonText: { color: '#fff', fontWeight: '600' },
+  empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.lg },
 });

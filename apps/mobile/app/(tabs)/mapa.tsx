@@ -8,7 +8,7 @@ import { colors, occupancyPinColor, spacing } from '@/constants/theme';
 export default function MapaScreen() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['units', 'map'],
-    queryFn: fetchUnits,
+    queryFn: () => fetchUnits(),
   });
 
   if (isLoading) {

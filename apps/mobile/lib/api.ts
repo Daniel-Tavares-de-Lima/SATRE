@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import type { AuthUser, UnitDetail, UnitSummary } from '@satre/shared-types';
 import { useAuthStore, type AuthSession } from './auth-store';
+import { buildUnitsQueryPath, type UnitListFilters } from './unit-filters';
 
 function resolveApiBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -65,8 +66,14 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   return response.json() as Promise<T>;
 }
 
-export function fetchUnits(): Promise<UnitSummary[]> {
-  return apiFetch('/units');
+export function fetchUnits(search?: string, filters?: UnitListFilters): Promise<UnitSummary[]> {
+  const path = filters
+    ? buildUnitsQueryPath(filters, search)
+    : search?.trim()
+      ? `/units?q=${encodeURIComponent(search.trim())}`
+      : '/units';
+
+  return apiFetch(path);
 }
 
 export function fetchNearbyUnits(lat: number, lng: number): Promise<UnitSummary[]> {
