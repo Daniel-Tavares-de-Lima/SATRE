@@ -16,7 +16,12 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 
 export function FilterChips({ active, onChange }: FilterChipsProps) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.row}
+      contentContainerStyle={styles.rowContent}
+    >
       {FILTERS.map((filter) => {
         const selected = active === filter.key;
         return (
@@ -41,6 +46,9 @@ const styles = StyleSheet.create({
   row: {
     marginBottom: spacing.md,
     flexGrow: 0,
+  },
+  rowContent: {
+    paddingRight: spacing.sm,
   },
   chip: {
     borderRadius: 20,

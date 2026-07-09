@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,15 +13,25 @@ import {
 import type { UnitSummary } from '@satre/shared-types';
 import { FilterChips, type FilterKey } from '@/components/FilterChips';
 import { UnitCard } from '@/components/UnitCard';
-import { API_BASE_URL, fetchNearbyUnits } from '@/lib/api';
-import { getUserCoords } from '@/lib/location';
+import { useNearbyUnits } from '@/hooks/useNearbyUnits';
+import { API_BASE_URL } from '@/lib/api';
 import { colors, spacing } from '@/constants/theme';
 
 function sortUnits(units: UnitSummary[], filter: FilterKey | null): UnitSummary[] {
   const copy = [...units];
-  if (filter === 'doctors') return copy.sort((a, b) => b.doctorCount - a.doctorCount);
-  if (filter === 'patients') return copy.sort((a, b) => b.patientCount - a.patientCount);
-  if (filter === 'wait') return copy.sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
+
+  if (filter === 'doctors') {
+    return copy.sort((a, b) => b.doctorCount - a.doctorCount);
+  }
+
+  if (filter === 'patients') {
+    return copy.sort((a, b) => b.patientCount - a.patientCount);
+  }
+
+  if (filter === 'wait') {
+    return copy.sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
+  }
+
   return copy;
 }
 
@@ -29,23 +39,20 @@ export default function InicioScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey | null>(null);
 
-  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ['units', 'nearby'],
-    queryFn: async () => {
-      const coords = await getUserCoords();
-      return fetchNearbyUnits(coords.lat, coords.lng);
-    },
-  });
+  const { data, isLoading, isError, refetch, isRefetching } = useNearbyUnits();
 
   const units = useMemo(() => {
-    if (!data) return [];
-    const q = search.trim().toLowerCase();
-    const filtered = q
-      ? data.filter(
-          (u) =>
-            u.name.toLowerCase().includes(q) || u.address.toLowerCase().includes(q),
+    if (!data?.units) return [];
+
+    const query = search.trim().toLowerCase();
+    const filtered = query
+      ? data.units.filter(
+          (unit) =>
+            unit.name.toLowerCase().includes(query) ||
+            unit.address.toLowerCase().includes(query),
         )
-      : data;
+      : data.units;
+
     return sortUnits(filtered, filter);
   }, [data, search, filter]);
 
@@ -59,7 +66,7 @@ export default function InicioScreen() {
     >
       <TextInput
         style={styles.search}
-        placeholder="Pesquisar"
+        placeholder="Pesquisar unidade"
         placeholderTextColor={colors.textMuted}
         value={search}
         onChangeText={setSearch}
@@ -68,11 +75,17 @@ export default function InicioScreen() {
 
       <FilterChips active={filter} onChange={setFilter} />
 
-      <Text style={styles.sectionTitle}>Perto de você</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Perto de você</Text>
+        {data && !data.permissionGranted ? (
+          <Text style={styles.locationHint}>Usando localização padrão (Recife)</Text>
+        ) : null}
+      </View>
 
       {isLoading && (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Buscando unidades próximas…</Text>
         </View>
       )}
 
@@ -81,6 +94,9 @@ export default function InicioScreen() {
           <Text style={styles.errorTitle}>Não foi possível carregar</Text>
           <Text style={styles.errorText}>API: {API_BASE_URL}</Text>
           <Text style={styles.errorText}>Confira se a API está rodando (npm run dev:api)</Text>
+          <Pressable style={styles.retryButton} onPress={() => refetch()}>
+            <Text style={styles.retryButtonText}>Tentar novamente</Text>
+          </Pressable>
         </View>
       )}
 
@@ -97,13 +113,13 @@ export default function InicioScreen() {
       ))}
 
       {!isLoading && !isError && units.length > 0 && (
-        <Text
-          style={styles.link}
+        <Pressable
           onPress={() => router.push('/(tabs)/hospitais')}
           accessibilityRole="link"
+          style={styles.linkWrap}
         >
-          ver todos
-        </Text>
+          <Text style={styles.link}>ver todos</Text>
+        </Pressable>
       )}
     </ScrollView>
   );
@@ -123,13 +139,21 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     color: colors.text,
   },
+  sectionHeader: {
+    marginBottom: spacing.sm,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.sm,
   },
-  center: { paddingVertical: spacing.xl, alignItems: 'center' },
+  locationHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+  center: { paddingVertical: spacing.xl, alignItems: 'center', gap: spacing.sm },
+  loadingText: { color: colors.textMuted, fontSize: 14 },
   errorBox: {
     backgroundColor: '#FEF2F2',
     borderRadius: 12,
@@ -139,12 +163,20 @@ const styles = StyleSheet.create({
   },
   errorTitle: { fontWeight: '700', color: '#B91C1C', marginBottom: spacing.xs },
   errorText: { color: '#7F1D1D', fontSize: 13 },
+  retryButton: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  retryButtonText: { color: '#fff', fontWeight: '600' },
   empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.lg },
+  linkWrap: { marginTop: spacing.sm, alignItems: 'center' },
   link: {
     color: colors.primary,
     fontWeight: '600',
-    textAlign: 'center',
-    marginTop: spacing.sm,
     fontSize: 15,
   },
 });

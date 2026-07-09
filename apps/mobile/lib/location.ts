@@ -5,12 +5,19 @@ export interface UserCoords {
   lng: number;
 }
 
-const RECIFE_CENTER: UserCoords = { lat: -8.0476, lng: -34.951 };
+export interface LocationResult {
+  coords: UserCoords;
+  permissionGranted: boolean;
+}
 
-export async function getUserCoords(): Promise<UserCoords> {
+export const RECIFE_CENTER: UserCoords = { lat: -8.0476, lng: -34.951 };
+
+/** Requests foreground location and returns user coords or Recife center as fallback. */
+export async function getUserLocation(): Promise<LocationResult> {
   const { status } = await Location.requestForegroundPermissionsAsync();
+
   if (status !== 'granted') {
-    return RECIFE_CENTER;
+    return { coords: RECIFE_CENTER, permissionGranted: false };
   }
 
   const position = await Location.getCurrentPositionAsync({
@@ -18,9 +25,16 @@ export async function getUserCoords(): Promise<UserCoords> {
   });
 
   return {
-    lat: position.coords.latitude,
-    lng: position.coords.longitude,
+    coords: {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+    },
+    permissionGranted: true,
   };
 }
 
-export { RECIFE_CENTER };
+/** @deprecated Use getUserLocation */
+export async function getUserCoords(): Promise<UserCoords> {
+  const { coords } = await getUserLocation();
+  return coords;
+}
