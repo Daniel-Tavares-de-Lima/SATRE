@@ -1,80 +1,153 @@
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { fetchUnits } from '@/lib/api';
-import { colors, occupancyPinColor, spacing } from '@/constants/theme';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import type { UnitSummary } from '@satre/shared-types';
+import { FilterChips, type FilterKey } from '@/components/FilterChips';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchBar } from '@/components/SearchBar';
+import { UnitMap } from '@/components/UnitMap';
+import { UnitMapSheet } from '@/components/UnitMapSheet';
+import { useFavorites } from '@/hooks/useFavorites';
+import { API_BASE_URL, fetchUnits } from '@/lib/api';
+import { isAuthenticated } from '@/lib/auth-store';
+import { getUserLocation, RECIFE_CENTER } from '@/lib/location';
+import { colors, spacing } from '@/constants/theme';
+
+function filterAndSortUnits(
+  units: UnitSummary[],
+  search: string,
+  filter: FilterKey | null,
+): UnitSummary[] {
+  const query = search.trim().toLowerCase();
+  let result = query
+    ? units.filter(
+        (unit) =>
+          unit.name.toLowerCase().includes(query) ||
+          unit.address.toLowerCase().includes(query),
+      )
+    : units;
+
+  if (filter === 'doctors') {
+    result = [...result].sort((a, b) => b.doctorCount - a.doctorCount);
+  } else if (filter === 'patients') {
+    result = [...result].sort((a, b) => b.patientCount - a.patientCount);
+  } else if (filter === 'wait') {
+    result = [...result].sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
+  }
+
+  return result;
+}
 
 export default function MapaScreen() {
-  const { data, isLoading, isError } = useQuery({
+  const [selectedUnit, setSelectedUnit] = useState<UnitSummary | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<FilterKey | null>(null);
+
+  const { isFavorite, toggleFavorite, isSaving } = useFavorites();
+
+  const locationQuery = useQuery({
+    queryKey: ['map', 'location'],
+    queryFn: getUserLocation,
+  });
+
+  const unitsQuery = useQuery({
     queryKey: ['units', 'map'],
     queryFn: () => fetchUnits(),
   });
 
-  if (isLoading) {
+  const mapCenter = locationQuery.data?.coords ?? RECIFE_CENTER;
+
+  const visibleUnits = useMemo(
+    () => filterAndSortUnits(unitsQuery.data ?? [], search, filter),
+    [unitsQuery.data, search, filter],
+  );
+
+  if (locationQuery.isLoading || unitsQuery.isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.root}>
+        <ScreenHeader title="Mapa" />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </View>
     );
   }
 
-  if (isError || !data?.length) {
+  if (unitsQuery.isError || !unitsQuery.data?.length) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.error}>Mapa indisponível — verifique a API</Text>
+      <View style={styles.root}>
+        <ScreenHeader title="Mapa" />
+        <View style={styles.center}>
+          <Text style={styles.error}>Mapa indisponível — verifique a API</Text>
+          <Text style={styles.errorHint}>{API_BASE_URL}</Text>
+          <Pressable style={styles.retryButton} onPress={() => unitsQuery.refetch()}>
+            <Text style={styles.retryButtonText}>Tentar novamente</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
-
-  const initialRegion = {
-    latitude: data[0].lat,
-    longitude: data[0].lng,
-    latitudeDelta: 0.12,
-    longitudeDelta: 0.12,
-  };
 
   return (
-    <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={initialRegion}
-        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-      >
-        {data.map((unit) => (
-          <Marker
-            key={unit.id}
-            coordinate={{ latitude: unit.lat, longitude: unit.lng }}
-            pinColor={occupancyPinColor(unit.occupancyLevel)}
-            title={unit.name}
-            description={`${unit.estimatedWaitMinutes} min · ${unit.occupancyLevel}`}
-            onCalloutPress={() => router.push(`/unidade/${unit.id}`)}
-          />
-        ))}
-      </MapView>
+    <View style={styles.root}>
+      <UnitMap
+        units={visibleUnits}
+        center={mapCenter}
+        selectedUnitId={selectedUnit?.id ?? null}
+        onSelectUnit={setSelectedUnit}
+      />
 
-      <View style={styles.legend}>
-        <Text style={styles.legendText}>Toque no pin para ver detalhes</Text>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <ScreenHeader title="Mapa" />
+        <View style={styles.controls} pointerEvents="auto">
+          <SearchBar value={search} onChangeText={setSearch} style={styles.search} />
+          <FilterChips active={filter} onChange={setFilter} />
+        </View>
       </View>
+
+      {selectedUnit ? (
+        <UnitMapSheet
+          unit={selectedUnit}
+          isFavorite={isFavorite(selectedUnit.id)}
+          isAuthenticated={isAuthenticated()}
+          isSaving={isSaving}
+          onClose={() => setSelectedUnit(null)}
+          onToggleFavorite={() => toggleFavorite(selectedUnit)}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  error: { color: colors.textMuted },
-  legend: {
-    position: 'absolute',
-    bottom: spacing.md,
-    left: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+  root: { flex: 1, backgroundColor: colors.background },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
   },
-  legendText: { textAlign: 'center', color: colors.textMuted, fontSize: 13 },
+  controls: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  search: { marginBottom: spacing.sm },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  error: { color: colors.text, fontWeight: '600', marginBottom: spacing.xs },
+  errorHint: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.md },
+  retryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  retryButtonText: { color: '#fff', fontWeight: '600' },
 });

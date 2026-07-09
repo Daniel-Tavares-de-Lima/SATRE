@@ -7,14 +7,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import type { UnitSummary } from '@satre/shared-types';
 import { FilterChips, type FilterKey } from '@/components/FilterChips';
-import { UnitCard } from '@/components/UnitCard';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchBar } from '@/components/SearchBar';
+import { UnitCardFigma } from '@/components/UnitCardFigma';
+import { ProfileCompleteBanner } from '@/components/ProfileCompleteBanner';
+import { useFavorites } from '@/hooks/useFavorites';
 import { useNearbyUnits } from '@/hooks/useNearbyUnits';
 import { API_BASE_URL } from '@/lib/api';
+import { useAuthStore } from '@/lib/auth-store';
 import { colors, spacing } from '@/constants/theme';
 
 function sortUnits(units: UnitSummary[], filter: FilterKey | null): UnitSummary[] {
@@ -38,6 +42,8 @@ function sortUnits(units: UnitSummary[], filter: FilterKey | null): UnitSummary[
 export default function InicioScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey | null>(null);
+  const user = useAuthStore((state) => state.user);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const { data, isLoading, isError, refetch, isRefetching } = useNearbyUnits();
 
@@ -57,23 +63,23 @@ export default function InicioScreen() {
   }, [data, search, filter]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
-      }
-    >
-      <TextInput
-        style={styles.search}
-        placeholder="Pesquisar unidade"
-        placeholderTextColor={colors.textMuted}
-        value={search}
-        onChangeText={setSearch}
-        accessibilityLabel="Pesquisar unidades"
-      />
+    <View style={styles.root}>
+      <ScreenHeader variant="home" userLabel={user?.name ?? 'Usuário'} />
 
-      <FilterChips active={filter} onChange={setFilter} />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+        }
+      >
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          style={styles.searchInput}
+        />
+
+        <FilterChips active={filter} onChange={setFilter} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Perto de você</Text>
@@ -105,12 +111,16 @@ export default function InicioScreen() {
       )}
 
       {units.map((unit) => (
-        <UnitCard
+        <UnitCardFigma
           key={unit.id}
           unit={unit}
+          isFavorite={isFavorite(unit.id)}
+          onToggleFavorite={() => toggleFavorite(unit)}
           onPress={() => router.push(`/unidade/${unit.id}`)}
         />
       ))}
+
+      <ProfileCompleteBanner visible={!user} />
 
       {!isLoading && !isError && units.length > 0 && (
         <Pressable
@@ -121,24 +131,16 @@ export default function InicioScreen() {
           <Text style={styles.link}>ver todos</Text>
         </Pressable>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
-  search: {
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: spacing.md,
-    color: colors.text,
-  },
+  searchInput: { marginBottom: spacing.md },
   sectionHeader: {
     marginBottom: spacing.sm,
   },

@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { AuthTextField, ConsentCheckbox } from '@/components/AuthForm';
+import { PillButton } from '@/components/PillButton';
 import { register } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/auth-errors';
 import { useAuthStore } from '@/lib/auth-store';
@@ -70,9 +69,8 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.subtitle}>
-          Cadastro mínimo: apenas nome, e-mail e senha (LGPD).
-        </Text>
+        <Text style={styles.title}>Criar conta</Text>
+        <Text style={styles.subtitle}>Cadastro mínimo: nome, e-mail e senha.</Text>
 
         <AuthTextField
           label="Nome"
@@ -85,7 +83,7 @@ export default function RegisterScreen() {
         />
 
         <AuthTextField
-          label="E-mail"
+          label="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -128,17 +126,7 @@ export default function RegisterScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable
-          style={[styles.primaryButton, loading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Criar conta</Text>
-          )}
-        </Pressable>
+        <PillButton label="Criar conta" loading={loading} onPress={handleRegister} />
 
         <Text style={styles.footer}>
           Já tem conta?{' '}
@@ -152,10 +140,17 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: colors.background },
   container: {
     padding: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 14,
@@ -167,19 +162,6 @@ const styles = StyleSheet.create({
     color: colors.high,
     marginBottom: spacing.md,
     fontSize: 14,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonDisabled: { opacity: 0.7 },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
   },
   footer: {
     textAlign: 'center',

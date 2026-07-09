@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import type { AuthUser, UnitDetail, UnitSummary } from '@satre/shared-types';
+import type { AuthUser, CreateReportBody, UnitDetail, UnitSummary } from '@satre/shared-types';
 import { useAuthStore, type AuthSession } from './auth-store';
 import { buildUnitsQueryPath, type UnitListFilters } from './unit-filters';
 
@@ -117,4 +117,39 @@ export function logout(refreshToken: string): Promise<void> {
 
 export function fetchProfile(): Promise<AuthUser> {
   return apiFetch('/users/me');
+}
+
+export function updateProfile(name: string): Promise<AuthUser> {
+  return apiFetch('/users/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function fetchFavorites(): Promise<UnitSummary[]> {
+  return apiFetch('/users/me/favorites');
+}
+
+export function addFavorite(unitId: string): Promise<{ message: string }> {
+  return apiFetch(`/units/${unitId}/favorites`, { method: 'POST' });
+}
+
+export function removeFavorite(unitId: string): Promise<void> {
+  return apiFetch(`/units/${unitId}/favorites`, { method: 'DELETE' });
+}
+
+export function submitReport(
+  unitId: string,
+  deviceId: string,
+  body: CreateReportBody,
+): Promise<{ message: string }> {
+  return apiFetch(`/units/${unitId}/reports`, {
+    method: 'POST',
+    headers: { 'X-Device-Id': deviceId },
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteAccount(): Promise<void> {
+  return apiFetch('/users/me', { method: 'DELETE' });
 }

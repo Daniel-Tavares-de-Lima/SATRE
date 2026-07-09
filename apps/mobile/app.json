@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "backgroundColor": "#0B6E4F"
+      "backgroundColor": "#38A19A"
     },
     "ios": {
       "supportsTablet": true,
@@ -16,13 +16,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B6E4F"
+        "backgroundColor": "#38A19A"
       },
       "package": "com.satre.app"
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "single"
     },
     "plugins": [
       "expo-router",

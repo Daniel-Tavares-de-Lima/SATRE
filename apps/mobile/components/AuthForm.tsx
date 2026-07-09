@@ -10,19 +10,24 @@ import { colors, spacing } from '@/constants/theme';
 
 interface AuthTextFieldProps extends TextInputProps {
   label: string;
+  /** Figma login uses underline-only inputs. */
+  variant?: 'boxed' | 'underline';
 }
 
-export function AuthTextField({ label, style, ...props }: AuthTextFieldProps) {
+export function AuthTextField({ label, variant = 'underline', style, ...props }: AuthTextFieldProps) {
+  const isUnderline = variant === 'underline';
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[styles.input, style]}
+        style={[isUnderline ? styles.inputUnderline : styles.inputBox, style]}
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
         {...props}
       />
+      {isUnderline ? <View style={styles.underline} /> : null}
     </View>
   );
 }
@@ -50,14 +55,24 @@ export function ConsentCheckbox({ label, checked, onToggle }: ConsentCheckboxPro
 }
 
 const styles = StyleSheet.create({
-  field: { marginBottom: spacing.md },
+  field: { marginBottom: spacing.lg },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  input: {
+  inputUnderline: {
+    fontSize: 16,
+    color: colors.text,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 0,
+  },
+  underline: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  inputBox: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,

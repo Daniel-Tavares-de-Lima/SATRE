@@ -2,6 +2,9 @@
   "name": "satre",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
+  "overrides": {
+    "expo-font": "~13.0.4"
+  },
   "scripts": {
     "dev:api": "npm run dev -w @satre/api",
     "dev:mobile": "npm run start -w @satre/mobile",
@@ -9,6 +12,7 @@
     "db:migrate": "npm run db:migrate -w @satre/api",
     "db:seed": "npm run db:seed -w @satre/api",
     "db:up": "docker compose up -d",
-    "db:setup": "npm run db:up && node -e \"require('fs').copyFileSync('.env','apps/api/.env')\" && npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:up && node -e \"require('fs').copyFileSync('.env','apps/api/.env')\" && npm run db:migrate && npm run db:seed",
+    "db:sync-geodata": "npm run db:sync-geodata -w @satre/api"
   }
 }

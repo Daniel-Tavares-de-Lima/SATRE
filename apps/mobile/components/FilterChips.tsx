@@ -1,5 +1,5 @@
 import { ScrollView, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, spacing } from '@/constants/theme';
+import { colors, radius, spacing } from '@/constants/theme';
 
 export type FilterKey = 'doctors' | 'patients' | 'wait';
 
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
   },
   chip: {
-    borderRadius: 20,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,

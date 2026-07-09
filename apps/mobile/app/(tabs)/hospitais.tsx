@@ -8,11 +8,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { UnitCard } from '@/components/UnitCard';
+import { UnitCardFigma } from '@/components/UnitCardFigma';
+import { useFavorites } from '@/hooks/useFavorites';
 import { UnitFiltersModal } from '@/components/UnitFiltersModal';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { SearchBar } from '@/components/SearchBar';
 import { API_BASE_URL, fetchUnits } from '@/lib/api';
 import {
   countActiveFilters,
@@ -38,24 +40,25 @@ export default function HospitaisScreen() {
     return [...data].sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
   }, [data]);
 
+  const { isFavorite, toggleFavorite } = useFavorites();
+
   return (
     <>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
-        }
-      >
-        <View style={styles.searchRow}>
-          <TextInput
-            style={styles.search}
-            placeholder="Pesquisar unidade"
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor={colors.textMuted}
-            accessibilityLabel="Pesquisar unidades"
-          />
+      <View style={styles.root}>
+        <ScreenHeader title="Hospitais" />
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+          }
+        >
+          <View style={styles.searchRow}>
+            <SearchBar
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchFlex}
+            />
 
           <Pressable
             style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]}
@@ -101,13 +104,17 @@ export default function HospitaisScreen() {
         )}
 
         {units.map((unit) => (
-          <UnitCard
+          <UnitCardFigma
             key={unit.id}
             unit={unit}
+            showAddress={false}
+            isFavorite={isFavorite(unit.id)}
+            onToggleFavorite={() => toggleFavorite(unit)}
             onPress={() => router.push(`/unidade/${unit.id}`)}
           />
         ))}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <UnitFiltersModal
         visible={filtersOpen}
@@ -120,29 +127,21 @@ export default function HospitaisScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   searchRow: {
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
+    alignItems: 'center',
   },
-  search: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.text,
-    fontSize: 16,
-  },
+  searchFlex: { flex: 1 },
   filterButton: {
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    borderRadius: 10,
+    borderRadius: 999,
     paddingHorizontal: spacing.md,
     justifyContent: 'center',
   },

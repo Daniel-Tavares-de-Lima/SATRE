@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
-  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,7 +10,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthTextField } from '@/components/AuthForm';
+import { PillButton } from '@/components/PillButton';
 import { login } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/auth-errors';
 import { useAuthStore } from '@/lib/auth-store';
@@ -49,16 +51,17 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.subtitle}>Acesse sua conta SATRE</Text>
+        <Text style={styles.title}>Bem Vindo,</Text>
+        <Text style={styles.subtitle}>Cadastre e use e salve</Text>
 
         <AuthTextField
-          label="E-mail"
+          label="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           textContentType="emailAddress"
           autoComplete="email"
-          placeholder="seu@email.com"
+          placeholder="lorem.ipsum@gmail.com"
         />
 
         <AuthTextField
@@ -68,72 +71,86 @@ export default function LoginScreen() {
           secureTextEntry
           textContentType="password"
           autoComplete="password"
-          placeholder="••••••••"
+          placeholder="Insira a senha"
         />
+
+        <Pressable
+          style={styles.forgotRow}
+          onPress={() => Alert.alert('Em breve', 'Recuperação de senha estará disponível em breve.')}
+        >
+          <Text style={styles.forgot}>Esqueceu sua senha?</Text>
+        </Pressable>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable
-          style={[styles.primaryButton, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Entrar</Text>
-          )}
-        </Pressable>
+        <PillButton label="Entrar" loading={loading} onPress={handleLogin} />
 
         <Text style={styles.footer}>
-          Não tem conta?{' '}
+          Não possui conta?{' '}
           <Link href="/(auth)/register" style={styles.link}>
-            Cadastre-se
+            Se cadastre aqui
           </Link>
         </Text>
 
-        <View style={styles.socialSection}>
-          <Text style={styles.socialTitle}>Ou continue com</Text>
-          <Pressable style={styles.socialButton} disabled accessibilityState={{ disabled: true }}>
-            <Text style={styles.socialButtonText}>Google — Em breve</Text>
-          </Pressable>
-          <Pressable style={styles.socialButton} disabled accessibilityState={{ disabled: true }}>
-            <Text style={styles.socialButtonText}>Apple — Em breve</Text>
-          </Pressable>
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>Entre com:</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.socialRow}>
+          <SocialIcon
+            icon="logo-google"
+            onPress={() => Alert.alert('Em breve', 'Login com Google estará disponível em breve.')}
+          />
+          <SocialIcon
+            icon="logo-facebook"
+            onPress={() => Alert.alert('Em breve', 'Login com Facebook estará disponível em breve.')}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+function SocialIcon({
+  icon,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={styles.socialButton} onPress={onPress} accessibilityLabel="Login social">
+      <Ionicons name={icon} size={28} color={colors.primary} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: colors.background },
   container: {
     padding: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: 16,
     color: colors.textMuted,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
+  forgotRow: { alignSelf: 'flex-end', marginBottom: spacing.md },
+  forgot: { fontSize: 13, color: colors.textMuted },
   error: {
     color: colors.high,
     marginBottom: spacing.md,
     fontSize: 14,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonDisabled: { opacity: 0.7 },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
   },
   footer: {
     textAlign: 'center',
@@ -145,27 +162,24 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
-  socialSection: {
-    marginTop: spacing.xl,
-    gap: spacing.sm,
-  },
-  socialTitle: {
-    textAlign: 'center',
-    color: colors.textMuted,
-    fontSize: 14,
-    marginBottom: spacing.xs,
-  },
-  socialButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    paddingVertical: 12,
+  dividerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    opacity: 0.6,
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
   },
-  socialButtonText: {
-    color: colors.textMuted,
-    fontWeight: '600',
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.textMuted, fontSize: 14 },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
   },
 });
