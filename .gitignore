@@ -56,7 +56,8 @@ Desktop.ini
 # Prisma engine cache
 **/.cache/prisma/
 
-# Local-only — not for GitHub
-docs/
+# Local agent notes / Figma exports — not for GitHub
+docs/superpowers/
 SATRE/
 documentação/
+# Public product docs (deploy, demo) live under docs/ and ARE committed
