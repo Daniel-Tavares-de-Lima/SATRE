@@ -10,6 +10,7 @@
     "dev:mobile": "npm run start -w @satre/mobile",
     "test": "npm run test -w @satre/api",
     "db:migrate": "npm run db:migrate -w @satre/api",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @satre/api",
     "db:seed": "npm run db:seed -w @satre/api",
     "db:up": "docker compose up -d",
     "db:setup": "npm run db:up && node -e \"require('fs').copyFileSync('.env','apps/api/.env')\" && npm run db:migrate && npm run db:seed",

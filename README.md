@@ -4,7 +4,7 @@
 
 Aplicativo mobile que oferece informações transparentes sobre unidades de pronto atendimento (UPAs e hospitais) em Recife, que incluem: lotação, tempo de espera, médicos disponíveis, especialidades e acessibilidade para ajudar cidadãos a tomar decisões mais informadas e reduzir superlotação.
 
-> Projeto em desenvolvimento · API funcional com dados mock · App mobile em scaffold
+> Projeto em desenvolvimento · API funcional com dados mock · App mobile (Expo) alinhado ao Figma · checklist de demo pronto
 
 ---
 
@@ -56,24 +56,26 @@ Alinhado à **ODS 3** — Saúde e bem-estar (Meta 3.8: acesso universal à saú
 | Auth (register, login, refresh, logout) | ✅ |
 | Rotas de unidades + nearby (raio 15 km) | ✅ |
 | Reports crowdsourcing + anti-spam | ✅ |
-| Favoritos + perfil de usuário | ⏳ Task 8 |
-| Job de retenção de reports (90 dias) | ⏳ Task 9 |
+| Favoritos + perfil de usuário | ✅ |
+| Job de retenção de reports (90 dias) | ✅ |
+| Deploy prep (Docker + checklist) | ✅ |
 
-**22 testes automatizados** passando na API (estimador, auth, units, reports, device-hash).
+**31 testes automatizados** passando na API.
 
 ### App mobile (Expo)
 
 | Tela / recurso | Status |
 |----------------|--------|
-| Tabs: Início, Hospitais, Mapa | ✅ |
-| Integração com API (`lib/api.ts`) | ✅ |
-| Componentes: UnitCard, FilterChips, OccupancyBadge | ✅ |
-| Tab Perfil + login/registro | ⏳ |
-| Detalhe da unidade (Emergência) | ⏳ |
-| Modal "Reportar situação" | ⏳ |
-| Configurações | ⏳ |
+| Tabs: Início, Hospitais, Mapa, Perfil | ✅ |
+| Login / cadastro + LGPD | ✅ |
+| Detalhe da unidade (Emergência) | ✅ |
+| Modal "Reportar situação" | ✅ |
+| Configurações | ✅ |
+| Design system Figma (teal) + geodata | ✅ |
+| Cache offline + estados de erro | ✅ |
+| Pass de acessibilidade | ✅ |
 
----
+**Demo:** checklist em `docs/demo-checklist.md` · deploy da API em `docs/deploy.md`
 
 ## Tecnologias
 

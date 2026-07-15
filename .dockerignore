@@ -1,0 +1,15 @@
+# Ignore local/dev artifacts when building the API image.
+node_modules
+**/node_modules
+.git
+.env
+**/.env
+apps/mobile
+docs
+SATRE
+*.md
+!apps/api/README.md
+apps/api/dist
+**/coverage
+**/.expo
+**/expo-env.d.ts
