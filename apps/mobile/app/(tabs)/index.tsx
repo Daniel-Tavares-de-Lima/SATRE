@@ -10,14 +10,15 @@ import {
   View,
 } from 'react-native';
 import type { UnitSummary } from '@satre/shared-types';
+import { ApiDownState } from '@/components/ApiDownState';
 import { FilterChips, type FilterKey } from '@/components/FilterChips';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchBar } from '@/components/SearchBar';
+import { StaleDataBanner } from '@/components/StaleDataBanner';
 import { UnitCardFigma } from '@/components/UnitCardFigma';
 import { ProfileCompleteBanner } from '@/components/ProfileCompleteBanner';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useNearbyUnits } from '@/hooks/useNearbyUnits';
-import { API_BASE_URL } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { colors, spacing } from '@/constants/theme';
 
@@ -81,56 +82,49 @@ export default function InicioScreen() {
 
         <FilterChips active={filter} onChange={setFilter} />
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Perto de você</Text>
-        {data && !data.permissionGranted ? (
-          <Text style={styles.locationHint}>Usando localização padrão (Recife)</Text>
-        ) : null}
-      </View>
+        <StaleDataBanner visible={Boolean(data?.fromCache)} />
 
-      {isLoading && (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Buscando unidades próximas…</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Perto de você</Text>
+          {data && !data.permissionGranted ? (
+            <Text style={styles.locationHint}>Usando localização padrão (Recife)</Text>
+          ) : null}
         </View>
-      )}
 
-      {isError && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Não foi possível carregar</Text>
-          <Text style={styles.errorText}>API: {API_BASE_URL}</Text>
-          <Text style={styles.errorText}>Confira se a API está rodando (npm run dev:api)</Text>
-          <Pressable style={styles.retryButton} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Tentar novamente</Text>
+        {isLoading && (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Buscando unidades próximas…</Text>
+          </View>
+        )}
+
+        {isError && <ApiDownState onRetry={() => refetch()} />}
+
+        {!isLoading && !isError && units.length === 0 && (
+          <Text style={styles.empty}>Nenhuma unidade encontrada</Text>
+        )}
+
+        {units.map((unit) => (
+          <UnitCardFigma
+            key={unit.id}
+            unit={unit}
+            isFavorite={isFavorite(unit.id)}
+            onToggleFavorite={() => toggleFavorite(unit)}
+            onPress={() => router.push(`/unidade/${unit.id}`)}
+          />
+        ))}
+
+        <ProfileCompleteBanner visible={!user} />
+
+        {!isLoading && !isError && units.length > 0 && (
+          <Pressable
+            onPress={() => router.push('/(tabs)/hospitais')}
+            accessibilityRole="link"
+            style={styles.linkWrap}
+          >
+            <Text style={styles.link}>ver todos</Text>
           </Pressable>
-        </View>
-      )}
-
-      {!isLoading && !isError && units.length === 0 && (
-        <Text style={styles.empty}>Nenhuma unidade encontrada</Text>
-      )}
-
-      {units.map((unit) => (
-        <UnitCardFigma
-          key={unit.id}
-          unit={unit}
-          isFavorite={isFavorite(unit.id)}
-          onToggleFavorite={() => toggleFavorite(unit)}
-          onPress={() => router.push(`/unidade/${unit.id}`)}
-        />
-      ))}
-
-      <ProfileCompleteBanner visible={!user} />
-
-      {!isLoading && !isError && units.length > 0 && (
-        <Pressable
-          onPress={() => router.push('/(tabs)/hospitais')}
-          accessibilityRole="link"
-          style={styles.linkWrap}
-        >
-          <Text style={styles.link}>ver todos</Text>
-        </Pressable>
-      )}
+        )}
       </ScrollView>
     </View>
   );
@@ -156,24 +150,6 @@ const styles = StyleSheet.create({
   },
   center: { paddingVertical: spacing.xl, alignItems: 'center', gap: spacing.sm },
   loadingText: { color: colors.textMuted, fontSize: 14 },
-  errorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  errorTitle: { fontWeight: '700', color: '#B91C1C', marginBottom: spacing.xs },
-  errorText: { color: '#7F1D1D', fontSize: 13 },
-  retryButton: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  retryButtonText: { color: '#fff', fontWeight: '600' },
   empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.lg },
   linkWrap: { marginTop: spacing.sm, alignItems: 'center' },
   link: {

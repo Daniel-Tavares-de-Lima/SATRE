@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchNearbyUnits } from '@/lib/api';
+import { fetchNearbyUnitsWithCache } from '@/lib/api';
 import { getUserLocation } from '@/lib/location';
 
 export function useNearbyUnits() {
@@ -7,8 +7,15 @@ export function useNearbyUnits() {
     queryKey: ['units', 'nearby'],
     queryFn: async () => {
       const location = await getUserLocation();
-      const units = await fetchNearbyUnits(location.coords.lat, location.coords.lng);
-      return { units, permissionGranted: location.permissionGranted };
+      const result = await fetchNearbyUnitsWithCache(
+        location.coords.lat,
+        location.coords.lng,
+      );
+      return {
+        units: result.units,
+        fromCache: result.fromCache,
+        permissionGranted: location.permissionGranted,
+      };
     },
   });
 }

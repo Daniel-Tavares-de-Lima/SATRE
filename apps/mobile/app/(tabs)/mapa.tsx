@@ -2,19 +2,19 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import type { UnitSummary } from '@satre/shared-types';
+import { ApiDownState } from '@/components/ApiDownState';
 import { FilterChips, type FilterKey } from '@/components/FilterChips';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchBar } from '@/components/SearchBar';
+import { StaleDataBanner } from '@/components/StaleDataBanner';
 import { UnitMap } from '@/components/UnitMap';
 import { UnitMapSheet } from '@/components/UnitMapSheet';
 import { useFavorites } from '@/hooks/useFavorites';
-import { API_BASE_URL, fetchUnits } from '@/lib/api';
+import { fetchUnitsWithCache } from '@/lib/api';
 import { isAuthenticated } from '@/lib/auth-store';
 import { getUserLocation, RECIFE_CENTER } from '@/lib/location';
 import { colors, spacing } from '@/constants/theme';
@@ -58,13 +58,13 @@ export default function MapaScreen() {
 
   const unitsQuery = useQuery({
     queryKey: ['units', 'map'],
-    queryFn: () => fetchUnits(),
+    queryFn: () => fetchUnitsWithCache(),
   });
 
   const mapCenter = locationQuery.data?.coords ?? RECIFE_CENTER;
 
   const visibleUnits = useMemo(
-    () => filterAndSortUnits(unitsQuery.data ?? [], search, filter),
+    () => filterAndSortUnits(unitsQuery.data?.units ?? [], search, filter),
     [unitsQuery.data, search, filter],
   );
 
@@ -79,16 +79,15 @@ export default function MapaScreen() {
     );
   }
 
-  if (unitsQuery.isError || !unitsQuery.data?.length) {
+  if (unitsQuery.isError || !unitsQuery.data?.units.length) {
     return (
       <View style={styles.root}>
         <ScreenHeader title="Mapa" />
         <View style={styles.center}>
-          <Text style={styles.error}>Mapa indisponível — verifique a API</Text>
-          <Text style={styles.errorHint}>{API_BASE_URL}</Text>
-          <Pressable style={styles.retryButton} onPress={() => unitsQuery.refetch()}>
-            <Text style={styles.retryButtonText}>Tentar novamente</Text>
-          </Pressable>
+          <ApiDownState
+            title="Mapa indisponível — verifique a API"
+            onRetry={() => unitsQuery.refetch()}
+          />
         </View>
       </View>
     );
@@ -108,6 +107,7 @@ export default function MapaScreen() {
         <View style={styles.controls} pointerEvents="auto">
           <SearchBar value={search} onChangeText={setSearch} style={styles.search} />
           <FilterChips active={filter} onChange={setFilter} />
+          <StaleDataBanner visible={Boolean(unitsQuery.data.fromCache)} />
         </View>
       </View>
 
@@ -141,13 +141,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
   },
-  error: { color: colors.text, fontWeight: '600', marginBottom: spacing.xs },
-  errorHint: { color: colors.textMuted, fontSize: 13, marginBottom: spacing.md },
-  retryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  retryButtonText: { color: '#fff', fontWeight: '600' },
 });

@@ -10,12 +10,14 @@ import {
   Text,
   View,
 } from 'react-native';
+import { ApiDownState } from '@/components/ApiDownState';
 import { UnitCardFigma } from '@/components/UnitCardFigma';
 import { useFavorites } from '@/hooks/useFavorites';
 import { UnitFiltersModal } from '@/components/UnitFiltersModal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchBar } from '@/components/SearchBar';
-import { API_BASE_URL, fetchUnits } from '@/lib/api';
+import { StaleDataBanner } from '@/components/StaleDataBanner';
+import { fetchUnitsWithCache } from '@/lib/api';
 import {
   countActiveFilters,
   DEFAULT_UNIT_FILTERS,
@@ -32,12 +34,12 @@ export default function HospitaisScreen() {
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['units', 'all', filters, search],
-    queryFn: () => fetchUnits(search, filters),
+    queryFn: () => fetchUnitsWithCache(search, filters),
   });
 
   const units = useMemo(() => {
-    if (!data) return [];
-    return [...data].sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
+    if (!data?.units) return [];
+    return [...data.units].sort((a, b) => a.estimatedWaitMinutes - b.estimatedWaitMinutes);
   }, [data]);
 
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -60,59 +62,53 @@ export default function HospitaisScreen() {
               style={styles.searchFlex}
             />
 
-          <Pressable
-            style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]}
-            onPress={() => setFiltersOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Abrir filtros"
-          >
-            <Text
-              style={[
-                styles.filterButtonText,
-                activeFilterCount > 0 && styles.filterButtonTextActive,
-              ]}
+            <Pressable
+              style={[styles.filterButton, activeFilterCount > 0 && styles.filterButtonActive]}
+              onPress={() => setFiltersOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir filtros"
             >
-              Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-            </Text>
-          </Pressable>
-        </View>
-
-        {activeFilterCount > 0 ? (
-          <Text style={styles.filterSummary}>
-            {units.length} unidade{units.length === 1 ? '' : 's'} com filtros aplicados
-          </Text>
-        ) : null}
-
-        {isLoading && (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        )}
-
-        {isError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorTitle}>Não foi possível carregar</Text>
-            <Text style={styles.errorText}>API: {API_BASE_URL}</Text>
-            <Pressable style={styles.retryButton} onPress={() => refetch()}>
-              <Text style={styles.retryButtonText}>Tentar novamente</Text>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  activeFilterCount > 0 && styles.filterButtonTextActive,
+                ]}
+              >
+                Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+              </Text>
             </Pressable>
           </View>
-        )}
 
-        {!isLoading && !isError && units.length === 0 && (
-          <Text style={styles.empty}>Nenhuma unidade encontrada</Text>
-        )}
+          <StaleDataBanner visible={Boolean(data?.fromCache)} />
 
-        {units.map((unit) => (
-          <UnitCardFigma
-            key={unit.id}
-            unit={unit}
-            showAddress={false}
-            isFavorite={isFavorite(unit.id)}
-            onToggleFavorite={() => toggleFavorite(unit)}
-            onPress={() => router.push(`/unidade/${unit.id}`)}
-          />
-        ))}
+          {activeFilterCount > 0 && !data?.fromCache ? (
+            <Text style={styles.filterSummary}>
+              {units.length} unidade{units.length === 1 ? '' : 's'} com filtros aplicados
+            </Text>
+          ) : null}
+
+          {isLoading && (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
+
+          {isError && <ApiDownState onRetry={() => refetch()} />}
+
+          {!isLoading && !isError && units.length === 0 && (
+            <Text style={styles.empty}>Nenhuma unidade encontrada</Text>
+          )}
+
+          {units.map((unit) => (
+            <UnitCardFigma
+              key={unit.id}
+              unit={unit}
+              showAddress={false}
+              isFavorite={isFavorite(unit.id)}
+              onToggleFavorite={() => toggleFavorite(unit)}
+              onPress={() => router.push(`/unidade/${unit.id}`)}
+            />
+          ))}
         </ScrollView>
       </View>
 
@@ -163,22 +159,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   center: { paddingVertical: spacing.xl, alignItems: 'center' },
-  errorBox: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  errorTitle: { fontWeight: '700', color: '#B91C1C', marginBottom: spacing.xs },
-  errorText: { color: '#7F1D1D', fontSize: 13, marginBottom: spacing.sm },
-  retryButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  retryButtonText: { color: '#fff', fontWeight: '600' },
   empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.lg },
 });

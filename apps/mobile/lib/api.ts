@@ -2,7 +2,18 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import type { AuthUser, CreateReportBody, UnitDetail, UnitSummary } from '@satre/shared-types';
 import { useAuthStore, type AuthSession } from './auth-store';
-import { buildUnitsQueryPath, type UnitListFilters } from './unit-filters';
+import { loadCachedUnits, saveCachedUnits } from './unit-cache';
+import {
+  buildUnitsQueryPath,
+  countActiveFilters,
+  type UnitListFilters,
+} from './unit-filters';
+
+/** Units payload that may come from live API or offline cache. */
+export interface UnitsFetchResult {
+  units: UnitSummary[];
+  fromCache: boolean;
+}
 
 function resolveApiBaseUrl(): string {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -78,6 +89,74 @@ export function fetchUnits(search?: string, filters?: UnitListFilters): Promise<
 
 export function fetchNearbyUnits(lat: number, lng: number): Promise<UnitSummary[]> {
   return apiFetch(`/units/nearby?lat=${lat}&lng=${lng}`);
+}
+
+/** True when the request never reached a healthy API (or server is down). */
+function isOfflineFailure(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.status >= 500;
+  }
+  return true;
+}
+
+/**
+ * Fetches `/units`, caches the unfiltered response, and falls back to cache
+ * when the network/API is unavailable.
+ */
+export async function fetchUnitsWithCache(
+  search?: string,
+  filters?: UnitListFilters,
+): Promise<UnitsFetchResult> {
+  try {
+    const units = await fetchUnits(search, filters);
+    const isBaseList =
+      !search?.trim() && (!filters || countActiveFilters(filters) === 0);
+    if (isBaseList) {
+      await saveCachedUnits('units', units);
+    }
+    return { units, fromCache: false };
+  } catch (error) {
+    if (!isOfflineFailure(error)) {
+      throw error;
+    }
+
+    const cached = await loadCachedUnits('units');
+    if (cached) {
+      return { units: cached, fromCache: true };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Fetches `/units/nearby`, caches the response, and falls back to nearby
+ * cache (then full units cache) when offline.
+ */
+export async function fetchNearbyUnitsWithCache(
+  lat: number,
+  lng: number,
+): Promise<UnitsFetchResult> {
+  try {
+    const units = await fetchNearbyUnits(lat, lng);
+    await saveCachedUnits('nearby', units);
+    return { units, fromCache: false };
+  } catch (error) {
+    if (!isOfflineFailure(error)) {
+      throw error;
+    }
+
+    const nearby = await loadCachedUnits('nearby');
+    if (nearby) {
+      return { units: nearby, fromCache: true };
+    }
+
+    const all = await loadCachedUnits('units');
+    if (all) {
+      return { units: all, fromCache: true };
+    }
+
+    throw error;
+  }
 }
 
 export function fetchUnitById(id: string): Promise<UnitDetail> {
