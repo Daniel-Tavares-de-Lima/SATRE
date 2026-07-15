@@ -86,8 +86,10 @@ export function ReportModal({ visible, unitId, unitName, onClose, onSuccess }: R
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          <Text style={styles.title}>Reportar situação</Text>
+        <View style={styles.sheet} accessibilityViewIsModal>
+          <Text style={styles.title} accessibilityRole="header">
+            Reportar situação
+          </Text>
           <Text style={styles.unitName}>{unitName}</Text>
           <Text style={styles.disclaimer}>Seu report é anônimo e ajuda outros pacientes.</Text>
 
@@ -98,6 +100,7 @@ export function ReportModal({ visible, unitId, unitName, onClose, onSuccess }: R
                 <Segment
                   key={option.value}
                   label={option.label}
+                  group="Lotação"
                   selected={occupancy === option.value}
                   onPress={() => setOccupancy(option.value)}
                 />
@@ -110,6 +113,7 @@ export function ReportModal({ visible, unitId, unitName, onClose, onSuccess }: R
                 <Segment
                   key={option.value}
                   label={option.label}
+                  group="Tempo de espera"
                   selected={waitLevel === option.value}
                   onPress={() => setWaitLevel(option.value)}
                 />
@@ -125,6 +129,8 @@ export function ReportModal({ visible, unitId, unitName, onClose, onSuccess }: R
               onChangeText={setNote}
               maxLength={200}
               multiline
+              accessibilityLabel="Observação opcional do report"
+              accessibilityHint="Não inclua informações médicas ou pessoais"
             />
             <Text style={styles.privacy}>Não inclua informações médicas ou pessoais.</Text>
           </ScrollView>
@@ -141,17 +147,21 @@ function Segment({
   label,
   selected,
   onPress,
+  group,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
+  group: string;
 }) {
   return (
     <Pressable
       style={[styles.segment, selected && styles.segmentSelected]}
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={`${group}: ${label}`}
       accessibilityState={{ selected }}
+      accessibilityHint={selected ? 'Selecionado' : 'Toque para selecionar'}
     >
       <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>{label}</Text>
     </Pressable>

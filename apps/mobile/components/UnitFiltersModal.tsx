@@ -84,6 +84,9 @@ export function UnitFiltersModal({
                     key={option.label}
                     style={[styles.segment, selected && styles.segmentActive]}
                     onPress={() => setType(option.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Tipo de unidade: ${option.label}`}
+                    accessibilityState={{ selected }}
                   >
                     <Text style={[styles.segmentText, selected && styles.segmentTextActive]}>
                       {option.label}
@@ -104,6 +107,7 @@ export function UnitFiltersModal({
                   setDraft((current) => ({ ...current, accessibleOnly }))
                 }
                 trackColor={{ false: colors.border, true: colors.primary }}
+                accessibilityLabel="Somente unidades acessíveis"
               />
             </View>
 
@@ -120,6 +124,13 @@ export function UnitFiltersModal({
               minimumTrackTintColor={colors.primary}
               maximumTrackTintColor={colors.border}
               thumbTintColor={colors.primary}
+              accessibilityLabel="Tempo máximo de espera"
+              accessibilityValue={{
+                text:
+                  draft.maxWait === null
+                    ? 'Sem limite'
+                    : `Até ${draft.maxWait} minutos`,
+              }}
               onValueChange={(value) =>
                 setDraft((current) => ({
                   ...current,
@@ -134,10 +145,20 @@ export function UnitFiltersModal({
           </ScrollView>
 
           <View style={styles.actions}>
-            <Pressable style={styles.clearButton} onPress={handleClear}>
+            <Pressable
+              style={styles.clearButton}
+              onPress={handleClear}
+              accessibilityRole="button"
+              accessibilityLabel="Limpar filtros"
+            >
               <Text style={styles.clearButtonText}>Limpar</Text>
             </Pressable>
-            <Pressable style={styles.applyButton} onPress={handleApply}>
+            <Pressable
+              style={styles.applyButton}
+              onPress={handleApply}
+              accessibilityRole="button"
+              accessibilityLabel="Aplicar filtros"
+            >
               <Text style={styles.applyButtonText}>Aplicar</Text>
             </Pressable>
           </View>

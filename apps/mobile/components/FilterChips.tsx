@@ -30,6 +30,8 @@ export function FilterChips({ active, onChange }: FilterChipsProps) {
             style={[styles.chip, selected && styles.chipActive]}
             onPress={() => onChange(selected ? null : filter.key)}
             accessibilityRole="button"
+            accessibilityLabel={`Ordenar por ${filter.label}`}
+            accessibilityHint={selected ? 'Selecionado. Toque para remover o filtro' : 'Toque para aplicar o filtro'}
             accessibilityState={{ selected }}
           >
             <Text style={[styles.chipText, selected && styles.chipTextActive]}>

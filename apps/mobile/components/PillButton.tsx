@@ -44,6 +44,7 @@ export function PillButton({
       ]}
       disabled={isDisabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: isDisabled }}
       {...pressableProps}
     >

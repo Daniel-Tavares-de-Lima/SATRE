@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import type { UnitSummary } from '@satre/shared-types';
+import { occupancyLevelLabel } from '@/components/OccupancyBadge';
 import { RECIFE_CENTER } from '@/lib/location';
 import { occupancyPinColor } from '@/constants/theme';
 
@@ -43,6 +44,7 @@ export function UnitMap({ units, center, selectedUnitId, onSelectUnit }: UnitMap
             pinColor={occupancyPinColor(unit.occupancyLevel)}
             title={unit.name}
             description={`${unit.estimatedWaitMinutes} min · ${unit.doctorCount} médicos`}
+            accessibilityLabel={`${unit.name}, lotação ${occupancyLevelLabel(unit.occupancyLevel)}, ${unit.estimatedWaitMinutes} minutos de espera, ${unit.doctorCount} médicos`}
             onPress={() => onSelectUnit(unit)}
             opacity={selectedUnitId && selectedUnitId !== unit.id ? 0.75 : 1}
           />

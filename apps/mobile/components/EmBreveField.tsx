@@ -9,7 +9,13 @@ interface EmBreveFieldProps {
 /** Disabled profile field with "Em breve" badge (Option A — LGPD Fase 2). */
 export function EmBreveField({ label, placeholder = '—' }: EmBreveFieldProps) {
   return (
-    <View style={styles.field} accessibilityState={{ disabled: true }}>
+    <View
+      style={styles.field}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${label}, Em breve, campo indisponível`}
+      accessibilityState={{ disabled: true }}
+    >
       <View style={styles.labelRow}>
         <Text style={styles.label}>{label}</Text>
         <View style={styles.badge}>

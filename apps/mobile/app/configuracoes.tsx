@@ -69,7 +69,13 @@ export default function ConfiguracoesScreen() {
           title="Tamanho das fontes e ícones"
           subtitle="Adapte a fonte e os tamanhos dos ícones."
           action={
-            <Pressable style={styles.chipButton} onPress={cycleFontScale}>
+            <Pressable
+              style={styles.chipButton}
+              onPress={cycleFontScale}
+              accessibilityRole="button"
+              accessibilityLabel={`Tamanho da fonte: ${fontScale === 'normal' ? 'Normal' : 'Grande'}`}
+              accessibilityHint="Alterna entre tamanho normal e grande"
+            >
               <Text style={styles.chipButtonText}>{fontScale === 'normal' ? 'Normal' : 'Grande'}</Text>
             </Pressable>
           }
@@ -83,6 +89,7 @@ export default function ConfiguracoesScreen() {
               value={accessibleOnly}
               onValueChange={setAccessibleOnly}
               trackColor={{ false: colors.border, true: colors.primary }}
+              accessibilityLabel="Mostrar apenas emergências acessíveis"
             />
           }
         />
@@ -95,6 +102,7 @@ export default function ConfiguracoesScreen() {
               value={neutralColors}
               onValueChange={setNeutralColors}
               trackColor={{ false: colors.border, true: colors.primary }}
+              accessibilityLabel="Usar cores neutras no aplicativo"
             />
           }
         />
@@ -141,9 +149,16 @@ function SettingsRow({
 
 function LinkRow({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable style={styles.linkRow} onPress={onPress}>
+    <Pressable
+      style={styles.linkRow}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <Text style={styles.linkLabel}>{label}</Text>
-      <Text style={styles.chevron}>›</Text>
+      <Text style={styles.chevron} accessible={false}>
+        ›
+      </Text>
     </Pressable>
   );
 }

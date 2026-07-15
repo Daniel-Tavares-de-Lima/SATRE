@@ -30,9 +30,15 @@ export function SpecialtyGrid({ specialties }: SpecialtyGridProps) {
       <Text style={styles.title}>Tipos de Atendimentos</Text>
       <View style={styles.grid}>
         {items.map((item) => (
-          <View key={item.label} style={styles.card}>
-            <Ionicons name={item.icon} size={32} color={colors.primary} />
-            <Text style={styles.label} numberOfLines={2}>
+          <View
+            key={item.label}
+            style={styles.card}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={`Especialidade ${item.label}`}
+          >
+            <Ionicons name={item.icon} size={32} color={colors.primary} accessible={false} />
+            <Text style={styles.label} numberOfLines={2} accessible={false}>
               {item.label}
             </Text>
           </View>

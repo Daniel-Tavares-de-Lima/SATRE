@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { UnitSummary } from '@satre/shared-types';
-import { OccupancyBadge } from '@/components/OccupancyBadge';
+import { OccupancyBadge, occupancyLevelLabel } from '@/components/OccupancyBadge';
 import { colors, spacing } from '@/constants/theme';
 
 interface UnitMapProps {
@@ -26,6 +26,9 @@ export function UnitMap({ units, selectedUnitId, onSelectUnit }: UnitMapProps) {
             key={unit.id}
             style={[styles.card, selectedUnitId === unit.id && styles.cardSelected]}
             onPress={() => onSelectUnit(unit)}
+            accessibilityRole="button"
+            accessibilityLabel={`${unit.name}, lotação ${occupancyLevelLabel(unit.occupancyLevel)}, ${unit.estimatedWaitMinutes} minutos`}
+            accessibilityState={{ selected: selectedUnitId === unit.id }}
           >
             <View style={styles.cardHeader}>
               <Text style={styles.cardName}>{unit.name}</Text>

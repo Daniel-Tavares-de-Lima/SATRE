@@ -120,6 +120,7 @@ export default function InicioScreen() {
           <Pressable
             onPress={() => router.push('/(tabs)/hospitais')}
             accessibilityRole="link"
+            accessibilityLabel="Ver todos os hospitais"
             style={styles.linkWrap}
           >
             <Text style={styles.link}>ver todos</Text>

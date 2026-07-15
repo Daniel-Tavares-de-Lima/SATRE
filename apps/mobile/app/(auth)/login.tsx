@@ -77,11 +77,17 @@ export default function LoginScreen() {
         <Pressable
           style={styles.forgotRow}
           onPress={() => Alert.alert('Em breve', 'Recuperação de senha estará disponível em breve.')}
+          accessibilityRole="button"
+          accessibilityLabel="Esqueceu sua senha?"
         >
           <Text style={styles.forgot}>Esqueceu sua senha?</Text>
         </Pressable>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
 
         <PillButton label="Entrar" loading={loading} onPress={handleLogin} />
 
@@ -101,10 +107,12 @@ export default function LoginScreen() {
         <View style={styles.socialRow}>
           <SocialIcon
             icon="logo-google"
+            label="Entrar com Google"
             onPress={() => Alert.alert('Em breve', 'Login com Google estará disponível em breve.')}
           />
           <SocialIcon
             icon="logo-facebook"
+            label="Entrar com Facebook"
             onPress={() => Alert.alert('Em breve', 'Login com Facebook estará disponível em breve.')}
           />
         </View>
@@ -115,14 +123,22 @@ export default function LoginScreen() {
 
 function SocialIcon({
   icon,
+  label,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
+  label: string;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.socialButton} onPress={onPress} accessibilityLabel="Login social">
-      <Ionicons name={icon} size={28} color={colors.primary} />
+    <Pressable
+      style={styles.socialButton}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint="Em breve"
+    >
+      <Ionicons name={icon} size={28} color={colors.primary} accessible={false} />
     </Pressable>
   );
 }

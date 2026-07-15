@@ -96,7 +96,11 @@ export default function UnidadeDetailScreen() {
 
         <AccessibilityRow accessibility={unit.accessibility} />
 
-        <Pressable onPress={handleDirections} accessibilityRole="link">
+        <Pressable
+          onPress={handleDirections}
+          accessibilityRole="link"
+          accessibilityLabel={`Abrir rotas para ${unit.address}`}
+        >
           <View style={styles.addressRow}>
             <Ionicons name="location" size={18} color={colors.high} />
             <Text style={styles.addressLink}>{unit.address}</Text>

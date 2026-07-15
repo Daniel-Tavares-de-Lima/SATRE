@@ -36,7 +36,8 @@ export function UnitCardFigma({
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${unit.name}, ${unit.estimatedWaitMinutes} minutos de espera`}
+      accessibilityLabel={`${unit.name}, ${unit.estimatedWaitMinutes} minutos de espera, lotação ${unit.occupancyLevel === 'low' ? 'baixa' : unit.occupancyLevel === 'medium' ? 'média' : 'alta'}`}
+      accessibilityHint="Abre o detalhe da unidade"
     >
       <View style={styles.row}>
         <View style={[styles.thumb, { backgroundColor: thumb.backgroundColor }]}>
@@ -49,6 +50,7 @@ export function UnitCardFigma({
                 handleFavoritePress();
               }}
               hitSlop={8}
+              accessibilityRole="button"
               accessibilityLabel={isFavorite ? 'Remover favorito' : 'Salvar favorito'}
             >
               <Ionicons

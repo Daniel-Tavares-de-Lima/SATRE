@@ -124,7 +124,11 @@ export default function RegisterScreen() {
           onToggle={() => setAcceptPrivacy((value) => !value)}
         />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
 
         <PillButton label="Criar conta" loading={loading} onPress={handleRegister} />
 

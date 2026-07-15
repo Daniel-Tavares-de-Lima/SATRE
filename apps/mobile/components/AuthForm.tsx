@@ -14,17 +14,26 @@ interface AuthTextFieldProps extends TextInputProps {
   variant?: 'boxed' | 'underline';
 }
 
-export function AuthTextField({ label, variant = 'underline', style, ...props }: AuthTextFieldProps) {
+export function AuthTextField({
+  label,
+  variant = 'underline',
+  style,
+  accessibilityLabel,
+  ...props
+}: AuthTextFieldProps) {
   const isUnderline = variant === 'underline';
 
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label} accessibilityRole="text">
+        {label}
+      </Text>
       <TextInput
         style={[isUnderline ? styles.inputUnderline : styles.inputBox, style]}
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
+        accessibilityLabel={accessibilityLabel ?? label}
         {...props}
       />
       {isUnderline ? <View style={styles.underline} /> : null}
@@ -44,6 +53,7 @@ export function ConsentCheckbox({ label, checked, onToggle }: ConsentCheckboxPro
       style={styles.checkboxRow}
       onPress={onToggle}
       accessibilityRole="checkbox"
+      accessibilityLabel={label}
       accessibilityState={{ checked }}
     >
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>

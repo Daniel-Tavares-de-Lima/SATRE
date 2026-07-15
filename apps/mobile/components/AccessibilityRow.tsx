@@ -22,13 +22,24 @@ export function AccessibilityRow({ accessibility }: AccessibilityRowProps) {
         {ITEMS.map((item) => {
           const active = accessibility[item.key];
           return (
-            <View key={item.key} style={styles.item}>
+            <View
+              key={item.key}
+              style={styles.item}
+              accessible
+              accessibilityRole="text"
+              accessibilityLabel={`${item.label}: ${active ? 'disponível' : 'indisponível'}`}
+            >
               <Ionicons
                 name={item.icon}
                 size={28}
                 color={active ? colors.primary : colors.border}
+                accessible={false}
               />
-              <Text style={[styles.label, !active && styles.labelInactive]} numberOfLines={2}>
+              <Text
+                style={[styles.label, !active && styles.labelInactive]}
+                numberOfLines={2}
+                accessible={false}
+              >
                 {item.label}
               </Text>
             </View>

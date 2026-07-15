@@ -15,6 +15,7 @@ export function UnitCard({ unit, onPress }: UnitCardProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${unit.name}, ${unit.estimatedWaitMinutes} minutos de espera`}
+      accessibilityHint="Abre o detalhe da unidade"
     >
       <View style={styles.header}>
         <Text style={styles.name}>{unit.name}</Text>

@@ -43,8 +43,14 @@ export function UnitMapSheet({
     <View style={styles.sheet}>
       <View style={styles.handleRow}>
         <View style={styles.handle} />
-        <Pressable onPress={onClose} accessibilityLabel="Fechar detalhes da unidade">
-          <Text style={styles.close}>✕</Text>
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Fechar detalhes da unidade"
+        >
+          <Text style={styles.close} accessible={false}>
+            ✕
+          </Text>
         </Pressable>
       </View>
 
@@ -83,12 +89,14 @@ export function UnitMapSheet({
             variant={isFavorite ? 'primary' : 'secondary'}
             disabled={isSaving}
             onPress={handleSave}
+            accessibilityLabel={isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
           />
         </View>
         <Pressable
           style={styles.linkAction}
           onPress={() => router.push(`/unidade/${unit.id}`)}
-          accessibilityLabel="Ver detalhes da unidade"
+          accessibilityRole="button"
+          accessibilityLabel={`Ver detalhes de ${unit.name}`}
         >
           <Text style={styles.linkActionText}>Detalhes</Text>
         </Pressable>
