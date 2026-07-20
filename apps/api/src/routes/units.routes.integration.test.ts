@@ -33,7 +33,7 @@ describe('Units routes integration', () => {
 
     const units = response.json();
     expect(units.length).toBeGreaterThan(0);
-    expect(units[0].name).toBe('UPA Caxangá');
+    expect(units[0].name).toBe('UPA Caxangá (Escritor Paulo Cavalcanti)');
     expect(units[0].distanceMeters).toBeDefined();
 
     for (let index = 1; index < units.length; index += 1) {

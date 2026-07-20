@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AccessibilityRow } from '@/components/AccessibilityRow';
 import { PillButton } from '@/components/PillButton';
@@ -10,7 +10,7 @@ import { SpecialtyGrid } from '@/components/SpecialtyGrid';
 import { UnitMiniMap } from '@/components/UnitMiniMap';
 import { fetchUnitById } from '@/lib/api';
 import { openDirections } from '@/lib/maps';
-import { unitThumbnailStyle } from '@/lib/unit-images';
+import { unitPhoto, unitThumbnailStyle } from '@/lib/unit-images';
 import { useFavorites } from '@/hooks/useFavorites';
 import { colors, radius, spacing } from '@/constants/theme';
 
@@ -44,6 +44,7 @@ export default function UnidadeDetailScreen() {
 
   const unit = data;
   const thumb = unitThumbnailStyle(unit.type);
+  const photo = unitPhoto(unit.name);
 
   function handleDirections() {
     openDirections({
@@ -58,7 +59,11 @@ export default function UnidadeDetailScreen() {
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { backgroundColor: thumb.backgroundColor }]}>
-          <Ionicons name={thumb.iconName} size={64} color={thumb.iconColor} />
+          {photo ? (
+            <Image source={photo} style={styles.heroImage} accessibilityIgnoresInvertColors />
+          ) : (
+            <Ionicons name={thumb.iconName} size={64} color={thumb.iconColor} />
+          )}
           <Pressable
             style={styles.heroHeart}
             accessibilityLabel={isFavorite(unit.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
@@ -74,6 +79,7 @@ export default function UnidadeDetailScreen() {
         </View>
 
         <Text style={styles.name}>{unit.name}</Text>
+        {unit.phone ? <Text style={styles.phone}>{unit.phone}</Text> : null}
 
         <View style={styles.statsRow}>
           <View style={styles.statBlock}>
@@ -147,6 +153,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
   heroHeart: {
     position: 'absolute',
     bottom: spacing.sm,
@@ -159,6 +171,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  phone: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
     textAlign: 'center',
     marginBottom: spacing.lg,
   },

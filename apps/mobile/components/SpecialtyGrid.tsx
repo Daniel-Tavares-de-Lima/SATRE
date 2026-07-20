@@ -7,6 +7,7 @@ const SPECIALTY_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; lab
   Pediatria: { icon: 'people-outline', label: 'Pediatria' },
   Traumatologia: { icon: 'walk-outline', label: 'Traumato Ortopedia' },
   Ortopedia: { icon: 'walk-outline', label: 'Traumato Ortopedia' },
+  Odontologia: { icon: 'happy-outline', label: 'Odontologia' },
 };
 
 interface SpecialtyGridProps {

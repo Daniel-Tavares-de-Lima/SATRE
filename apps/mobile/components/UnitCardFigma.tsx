@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Image } from 'react-native';
 import type { UnitSummary } from '@satre/shared-types';
-import { hasExcellentServiceBadge, unitThumbnailStyle } from '@/lib/unit-images';
+import { hasExcellentServiceBadge, unitPhoto, unitThumbnailStyle } from '@/lib/unit-images';
 import { colors, radius, spacing } from '@/constants/theme';
 
 interface UnitCardFigmaProps {
@@ -24,6 +24,7 @@ export function UnitCardFigma({
   onToggleFavorite,
 }: UnitCardFigmaProps) {
   const thumb = unitThumbnailStyle(unit.type);
+  const photo = unitPhoto(unit.name);
   const excellent = hasExcellentServiceBadge(unit.type, unit.estimatedWaitMinutes);
 
   function handleFavoritePress() {
@@ -41,7 +42,11 @@ export function UnitCardFigma({
     >
       <View style={styles.row}>
         <View style={[styles.thumb, { backgroundColor: thumb.backgroundColor }]}>
-          <Ionicons name={thumb.iconName} size={28} color={thumb.iconColor} />
+          {photo ? (
+            <Image source={photo} style={styles.thumbImage} accessibilityIgnoresInvertColors />
+          ) : (
+            <Ionicons name={thumb.iconName} size={28} color={thumb.iconColor} />
+          )}
           {onToggleFavorite ? (
             <Pressable
               style={styles.heartButton}
@@ -126,6 +131,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   heartButton: {
     position: 'absolute',

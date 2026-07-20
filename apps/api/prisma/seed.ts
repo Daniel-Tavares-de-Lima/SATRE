@@ -20,6 +20,10 @@ async function main() {
   }
 
   for (const u of UNITS_GEODATA) {
+    const specialties = u.specialties?.length
+      ? u.specialties
+      : DEFAULT_SPECIALTIES;
+
     const unit = await prisma.unit.create({
       data: {
         name: u.name,
@@ -27,12 +31,13 @@ async function main() {
         address: u.address,
         lat: u.lat,
         lng: u.lng,
+        phone: u.phone ?? null,
         accessibilityPhysical: true,
         accessibilityVisual: true,
         accessibilityHearing: true,
         accessibilityNeuro: true,
         specialties: {
-          create: DEFAULT_SPECIALTIES.map((specialtyName) => ({ specialtyName })),
+          create: specialties.map((specialtyName) => ({ specialtyName })),
         },
         snapshots: {
           create: {
